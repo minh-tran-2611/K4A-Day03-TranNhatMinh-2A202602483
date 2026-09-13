@@ -47,6 +47,14 @@ python src/app.py --all
 📊 [KẾT QUẢ TEST SUITE]: 2 Đã chạy (TC01, TC02 mẫu) | 3 Đang chờ viết câu hỏi (TODO)
 ```
 
+### Chạy giao diện web trực quan
+
+```bash
+python src/web_app.py
+```
+
+Sau đó mở `http://127.0.0.1:8080`. Trang web cho phép chạy cùng một câu hỏi qua Chatbot và ReAct Agent, so sánh kết quả, số lượt gọi công cụ và Waterfall Trace theo từng bước.
+
 > 🔑 **QUY ĐỊNH BẮT BUỘC VỀ API KEY VÀ NỘP BÀI (SUBMISSION REQUIREMENT):**  
 > 
 > 1. **Giai đoạn gõ code & debug (Miễn phí 0đ):** Hệ thống mặc định chạy `MockOfflineProvider` giúp bạn thực hành gõ code, kiểm thử logic ban đầu hoàn toàn miễn phí, không tốn token, không lo nghẽn mạng.  

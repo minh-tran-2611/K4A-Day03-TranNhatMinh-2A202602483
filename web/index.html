@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>LLM hay Agent?</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="flow.css">
+  <link rel="stylesheet" href="typography.css">
+</head>
+<body>
+  <main>
+    <header>
+      <div class="eyebrow">VINUNI AI · LAB 03</div>
+      <h1>LLM trả lời.<br><span>Agent hành động.</span></h1>
+      <p class="lead">Đặt cùng một câu hỏi và quan sát sự khác biệt — từ một câu trả lời bằng chữ đến một chuỗi hành động có dữ liệu kiểm chứng.</p>
+    </header>
+
+    <section class="composer" aria-labelledby="question-title">
+      <label id="question-title" for="query">Bạn muốn thử tình huống nào?</label>
+      <div class="examples" aria-label="Câu hỏi mẫu">
+        <button data-query="Quy chế học vụ cơ bản của VinUni là gì?">Câu hỏi chung</button>
+        <button data-query="Hãy tra cứu thông tin học vụ của sinh viên SV2026001.">Tra cứu hồ sơ</button>
+        <button data-query="Tra cứu hồ sơ sinh viên SV2026001 để xác định cố vấn, sau đó đặt lịch tư vấn với cố vấn đó vào 09:30 ngày 18/09/2026.">Tác vụ nhiều bước</button>
+        <button data-query="Hãy tra cứu thông tin học vụ của sinh viên SV9999999.">Thử lỗi an toàn</button>
+        <button data-query="Tìm kiếm trên web thông tin mới nhất về Model Context Protocol.">Web Search thật</button>
+      </div>
+      <div class="input-row">
+        <textarea id="query" rows="3">Tra cứu hồ sơ sinh viên SV2026001 để xác định cố vấn, sau đó đặt lịch tư vấn với cố vấn đó vào 09:30 ngày 18/09/2026.</textarea>
+        <button id="run" class="primary"><span>So sánh ngay</span><b>→</b></button>
+      </div>
+      <p id="status" role="status">Sẵn sàng · dữ liệu học vụ là dữ liệu mô phỏng</p>
+    </section>
+
+    <section class="flow-stage" aria-label="Luồng hoạt động của Agent">
+      <div class="section-title"><div><span>AGENT EXECUTION FLOW</span><h2>Agent đang xử lý như thế nào?</h2></div></div>
+      <div class="flow-grid">
+        <div class="flow-label"><b>AGENT</b><small id="agent-mode">CHƯA CHẠY</small></div>
+        <div class="flow-track agent-track"><div class="node" data-stage="agent-input">01 · Nhận mục tiêu</div><i>→</i><div class="node" data-stage="agent-thought">02 · Suy luận</div><i>→</i><div class="tool-network" data-stage="agent-tools" aria-label="Agent lựa chọn giữa các công cụ"><span class="connector c1" data-tool="academic_query"></span><span class="connector c2" data-tool="web_search"></span><span class="connector c3" data-tool="schedule_appointment"></span><div class="tool-chip data" data-tool="academic_query">▦ Mock Data</div><div class="tool-chip search" data-tool="web_search">⌕ Web Search</div><div class="tool-chip schedule" data-tool="schedule_appointment">◷ Schedule</div><div class="agent-hub"><span class="agent-icon">✦</span><b>AGENT</b><small>ROUTER</small></div></div><i>→</i><div class="node observe" data-stage="agent-observation">04 · Observation</div><i>↻</i><div class="node final" data-stage="agent-final">05 · Kết luận</div></div>
+      </div>
+      <div class="speed-row"><span>Thời gian Agent: <b id="agent-time">—</b></span></div>
+    </section>
+
+    <section class="comparison" aria-label="Kết quả so sánh">
+      <article class="result-card llm">
+        <div class="card-head"><span class="number">01</span><div><h2>LLM Chatbot</h2><p>Sinh câu trả lời từ ngữ cảnh</p></div><span class="tag">TEXT ONLY</span></div>
+        <div id="llm-answer" class="answer empty">Chạy một tình huống để xem chatbot phản hồi.</div>
+        <ul class="traits"><li>Nhanh với kiến thức chung</li><li>Không truy cập công cụ</li><li>Có thể thiếu dữ liệu thực tế</li></ul>
+      </article>
+
+      <article class="result-card agent">
+        <div class="card-head"><span class="number">02</span><div><h2>ReAct Agent</h2><p>Suy luận và sử dụng công cụ</p></div><span class="tag">TOOL USE</span></div>
+        <div id="agent-answer" class="answer empty">Kết quả có căn cứ từ MCP sẽ xuất hiện tại đây.</div>
+        <div class="metric"><strong id="tool-count">0</strong><span>lượt gọi công cụ</span></div>
+        <ul class="traits"><li>Tra cứu dữ liệu qua MCP</li><li>Thực hiện tác vụ nhiều bước</li><li>Có trace để kiểm chứng</li></ul>
+      </article>
+    </section>
+
+    <section class="trace-panel">
+      <div class="section-title"><div><span>BEHIND THE SCENES</span><h2>Dòng suy luận có thể quan sát</h2></div><button id="toggle-explain">Cách đọc trace?</button></div>
+      <p id="explanation" class="explanation" hidden><b>Thought</b> là quyết định tiếp theo, <b>Action</b> là công cụ được gọi, <b>Observation</b> là dữ liệu công cụ trả về. Agent chỉ kết luận sau khi có đủ bằng chứng.</p>
+      <div id="trace" class="timeline"><div class="placeholder">Thought → Action → Observation → Final Answer</div></div>
+    </section>
+
+    <section class="learn-grid">
+      <div><span>WHEN TO USE</span><h2>Chọn đúng công cụ cho bài toán</h2></div>
+      <article><b>Chọn LLM khi</b><p>Giải thích, tóm tắt, viết lại hoặc trả lời kiến thức không cần cập nhật.</p></article>
+      <article><b>Chọn Agent khi</b><p>Cần dữ liệu bên ngoài, nhiều quyết định nối tiếp hoặc hành động trong hệ thống.</p></article>
+      <article><b>Luôn kiểm soát</b><p>Giới hạn số bước, xác thực tham số và lưu trace để phát hiện lỗi hoặc ảo giác.</p></article>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

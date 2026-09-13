@@ -61,7 +61,7 @@ def run_baseline_chatbot(user_query: str, provider):
     print(f"🤖 Chatbot phản hồi:\n{response}")
 
 
-def run_react_agent(user_query: str, provider, mcp_server: MCPAcademicServer) -> list:
+def run_react_agent(user_query: str, provider, mcp_server: MCPAcademicServer, progress_callback=None) -> list:
     """
     [REACT AGENT LOOP] Thực thi vòng lặp Thought -> Action -> Observation với MCP Server
     Trả về danh sách trace log của phiên thực thi.
@@ -71,6 +71,9 @@ def run_react_agent(user_query: str, provider, mcp_server: MCPAcademicServer) ->
     step = 0
     trace_logs = []
     tools_list = mcp_server.list_tools()
+    conversation_prompt = user_query
+    emit = progress_callback or (lambda event: None)
+    emit({"event": "agent_start"})
     
     while step < MAX_ITERATIONS:
         step += 1
@@ -78,21 +81,25 @@ def run_react_agent(user_query: str, provider, mcp_server: MCPAcademicServer) ->
         print(f"\n--- 🔄 Vòng lặp ReAct Loop (Step {step}/{MAX_ITERATIONS}) ---")
         
         # Gọi LLM với Native Tool Calling Specs
-        llm_response = provider.generate_with_tools(user_query, tools_list, system_prompt=REACT_AGENT_SYSTEM_PROMPT)
+        llm_response = provider.generate_with_tools(conversation_prompt, tools_list, system_prompt=REACT_AGENT_SYSTEM_PROMPT)
         latency_ms = round((time.time() - step_start_time) * 1000, 2)
         
         thought = llm_response.get("thought", "Đang suy luận...")
+        model_source = llm_response.get("source", provider.__class__.__name__)
+        emit({"event": "thought", "step": step, "thought": thought, "source": model_source})
         print(f"🧠 [Thought]: {thought}")
         
         # Trường hợp 1: LLM quyết định trả lời bằng văn bản trực tiếp
         if llm_response.get("type") == "text":
             final_content = llm_response.get("content", "")
             print(f"🏁 [Final Answer]: {final_content}")
+            emit({"event": "final", "answer": final_content, "source": model_source})
             trace_logs.append({
                 "step": step,
                 "query": user_query,
                 "action_type": "FINAL_ANSWER",
                 "thought": thought,
+                "model_source": model_source,
                 "output": final_content,
                 "latency_ms": latency_ms
             })
@@ -104,10 +111,12 @@ def run_react_agent(user_query: str, provider, mcp_server: MCPAcademicServer) ->
             arguments = llm_response.get("arguments", {})
             
             print(f"🛠️ [Action Proposed]: {tool_name}({arguments})")
+            emit({"event": "tool_selected", "tool_name": tool_name, "arguments": arguments})
             
             # Thực thi Tool qua MCP Server
             mcp_result = mcp_server.call_tool(tool_name, arguments)
             obs_data = mcp_result.get("result", {})
+            emit({"event": "observation", "tool_name": tool_name, "observation": obs_data})
             
             if not obs_data:
                 print(f"👁️ [Observation từ MCP Server]: {{}}")
@@ -142,22 +151,32 @@ def run_react_agent(user_query: str, provider, mcp_server: MCPAcademicServer) ->
                 "tool_name": tool_name,
                 "arguments": arguments,
                 "observation": obs_data,
+                "model_source": model_source,
                 "latency_ms": latency_ms
             })
             
-            # Kết thúc vòng lặp sau khi hoàn tất Observation và xuất Final Answer
-            print(f"🧠 [Thought]: Đã nhận được dữ liệu từ MCP Server. Tổng hợp kết quả phản hồi.")
-            print(f"🏁 [Final Answer]: {final_answer}")
-            
-            trace_logs.append({
-                "step": step + 1,
-                "query": user_query,
-                "action_type": "FINAL_ANSWER",
-                "thought": "Tổng hợp kết quả từ MCP Server thành công.",
-                "output": final_answer,
-                "latency_ms": 10.0
-            })
-            break
+            if obs_data.get("status") != "SUCCESS":
+                print(f"🏁 [Final Answer]: {final_answer}")
+                emit({"event": "final", "answer": final_answer, "source": model_source})
+                trace_logs.append({
+                    "step": step + 1, "query": user_query, "action_type": "FINAL_ANSWER",
+                    "thought": "Dừng an toàn vì công cụ không trả về trạng thái thành công.",
+                    "output": final_answer, "latency_ms": 0.0
+                })
+                break
+
+            conversation_prompt += (
+                f"\n\n[Observation step {step} từ tool {tool_name}]\n"
+                f"{json.dumps(obs_data, ensure_ascii=False)}\n"
+                "Hãy quyết định bước kế tiếp. Nếu mục tiêu đã hoàn tất, trả lời cuối cùng dựa đúng vào Observation."
+            )
+
+    else:
+        trace_logs.append({
+            "step": MAX_ITERATIONS, "query": user_query, "action_type": "MAX_ITERATIONS_REACHED",
+            "thought": "Dừng để tránh vòng lặp công cụ vô hạn.",
+            "output": "Không thể hoàn tất yêu cầu trong số bước cho phép.", "latency_ms": 0.0
+        })
 
     return trace_logs
 

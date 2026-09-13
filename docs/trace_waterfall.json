@@ -4,8 +4,9 @@
     "query": "Chào bạn, bạn có thể giới thiệu quy chế học vụ cơ bản của Đại học VinUni không?",
     "action_type": "FINAL_ANSWER",
     "thought": "Câu hỏi chung về quy chế học vụ, trả lời trực tiếp không cần gọi Tool.",
+    "model_source": "mock_fallback",
     "output": "[Mock Agent Response]: Xin chào! Quy chế học vụ VinUni yêu cầu sinh viên tích lũy tối thiểu 120 tín chỉ và duy trì GPA trên 2.0 để tốt nghiệp.",
-    "latency_ms": 2845.93
+    "latency_ms": 2311.66
   },
   {
     "step": 1,
@@ -15,15 +16,134 @@
     "arguments": {
       "student_id": "SV2026001"
     },
-    "observation": {},
-    "latency_ms": 799.12
+    "observation": {
+      "status": "SUCCESS",
+      "student_id": "SV2026001",
+      "data": {
+        "full_name": "Nguyễn Văn An",
+        "class": "AI-K4",
+        "gpa": 3.85,
+        "email": "an.nv@vinuni.edu.vn",
+        "status": "Đang học",
+        "advisor": "PGS.TS Nguyễn Văn A"
+      }
+    },
+    "model_source": "mock_fallback",
+    "latency_ms": 916.11
   },
   {
     "step": 2,
     "query": "Hãy tra cứu thông tin học vụ của sinh viên SV2026001.",
     "action_type": "FINAL_ANSWER",
-    "thought": "Tổng hợp kết quả từ MCP Server thành công.",
-    "output": "Chưa thể trả lời chi tiết do chưa nhận được dữ liệu từ MCP Server (hãy hoàn thành TODO 2.1).",
-    "latency_ms": 10.0
+    "thought": "Đã có dữ liệu cần thiết từ MCP Server, tôi có thể trả lời.",
+    "model_source": "mock_fallback",
+    "output": "Sinh viên Nguyễn Văn An (SV2026001) có GPA 3.85; cố vấn học tập: PGS.TS Nguyễn Văn A.",
+    "latency_ms": 921.42
+  },
+  {
+    "step": 1,
+    "query": "Hãy đặt lịch tư vấn học vụ cho sinh viên SV2026001 với PGS.TS Nguyễn Văn A vào 14:00 ngày 15/09/2026.",
+    "action_type": "TOOL_EXECUTION",
+    "tool_name": "schedule_appointment",
+    "arguments": {
+      "student_id": "SV2026001",
+      "datetime_str": "14:00 15/09/2026",
+      "advisor_name": "PGS.TS Nguyễn Văn A"
+    },
+    "observation": {
+      "status": "SUCCESS",
+      "booking_id": "BK-SV2026001-99",
+      "student_id": "SV2026001",
+      "datetime": "14:00 15/09/2026",
+      "advisor": "PGS.TS Nguyễn Văn A",
+      "message": "Đặt lịch thành công cho sinh viên SV2026001 với PGS.TS Nguyễn Văn A vào lúc 14:00 15/09/2026."
+    },
+    "model_source": "mock_fallback",
+    "latency_ms": 908.73
+  },
+  {
+    "step": 2,
+    "query": "Hãy đặt lịch tư vấn học vụ cho sinh viên SV2026001 với PGS.TS Nguyễn Văn A vào 14:00 ngày 15/09/2026.",
+    "action_type": "FINAL_ANSWER",
+    "thought": "Đã có xác nhận đặt lịch từ MCP Server, tôi có thể kết thúc tác vụ.",
+    "model_source": "mock_fallback",
+    "output": "Đặt lịch thành công cho sinh viên SV2026001 với PGS.TS Nguyễn Văn A vào lúc 14:00 15/09/2026.",
+    "latency_ms": 897.02
+  },
+  {
+    "step": 1,
+    "query": "Tra cứu hồ sơ sinh viên SV2026001 để xác định cố vấn, sau đó đặt lịch tư vấn với cố vấn đó vào 09:30 ngày 18/09/2026.",
+    "action_type": "TOOL_EXECUTION",
+    "tool_name": "academic_query",
+    "arguments": {
+      "student_id": "SV2026001"
+    },
+    "observation": {
+      "status": "SUCCESS",
+      "student_id": "SV2026001",
+      "data": {
+        "full_name": "Nguyễn Văn An",
+        "class": "AI-K4",
+        "gpa": 3.85,
+        "email": "an.nv@vinuni.edu.vn",
+        "status": "Đang học",
+        "advisor": "PGS.TS Nguyễn Văn A"
+      }
+    },
+    "model_source": "mock_fallback",
+    "latency_ms": 893.12
+  },
+  {
+    "step": 2,
+    "query": "Tra cứu hồ sơ sinh viên SV2026001 để xác định cố vấn, sau đó đặt lịch tư vấn với cố vấn đó vào 09:30 ngày 18/09/2026.",
+    "action_type": "TOOL_EXECUTION",
+    "tool_name": "schedule_appointment",
+    "arguments": {
+      "student_id": "SV2026001",
+      "datetime_str": "09:30 18/09/2026",
+      "advisor_name": "PGS.TS Nguyễn Văn A"
+    },
+    "observation": {
+      "status": "SUCCESS",
+      "booking_id": "BK-SV2026001-99",
+      "student_id": "SV2026001",
+      "datetime": "09:30 18/09/2026",
+      "advisor": "PGS.TS Nguyễn Văn A",
+      "message": "Đặt lịch thành công cho sinh viên SV2026001 với PGS.TS Nguyễn Văn A vào lúc 09:30 18/09/2026."
+    },
+    "model_source": "mock_fallback",
+    "latency_ms": 902.77
+  },
+  {
+    "step": 3,
+    "query": "Tra cứu hồ sơ sinh viên SV2026001 để xác định cố vấn, sau đó đặt lịch tư vấn với cố vấn đó vào 09:30 ngày 18/09/2026.",
+    "action_type": "FINAL_ANSWER",
+    "thought": "Đã có xác nhận đặt lịch từ MCP Server, tôi có thể kết thúc tác vụ.",
+    "model_source": "mock_fallback",
+    "output": "Đặt lịch thành công cho sinh viên SV2026001 với PGS.TS Nguyễn Văn A vào lúc 09:30 18/09/2026.",
+    "latency_ms": 907.79
+  },
+  {
+    "step": 1,
+    "query": "Hãy tra cứu thông tin học vụ của sinh viên SV9999999.",
+    "action_type": "TOOL_EXECUTION",
+    "tool_name": "academic_query",
+    "arguments": {
+      "student_id": "SV9999999"
+    },
+    "observation": {
+      "status": "NOT_FOUND",
+      "message": "Không tìm thấy dữ liệu sinh viên có mã 'SV9999999'"
+    },
+    "model_source": "mock_fallback",
+    "latency_ms": 912.24
+  },
+  {
+    "step": 2,
+    "query": "Hãy tra cứu thông tin học vụ của sinh viên SV9999999.",
+    "action_type": "FINAL_ANSWER",
+    "thought": "Dừng an toàn vì công cụ không trả về trạng thái thành công.",
+    "output": "Không tìm thấy dữ liệu sinh viên có mã 'SV9999999'",
+    "latency_ms": 0.0
   }
 ]

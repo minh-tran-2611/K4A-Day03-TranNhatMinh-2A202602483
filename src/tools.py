@@ -4,6 +4,10 @@ Mã nguồn chứa danh sách Tool Schemas (JSON Schema) và Execution Layer ph�
 """
 
 import json
+import os
+import urllib.error
+import urllib.parse
+import urllib.request
 from typing import Dict, Any
 
 # ==============================================================================
@@ -43,9 +47,34 @@ TOOLS_SCHEMA = [
         "parameters": {
             "type": "object",
             "properties": {
-                # TODO 1.2: Khai báo các thuộc tính tham số cho Tool tại đây...
+                "student_id": {
+                    "type": "string",
+                    "description": "Mã sinh viên cần đặt lịch (ví dụ: 'SV2026001')"
+                },
+                "datetime_str": {
+                    "type": "string",
+                    "description": "Thời gian hẹn theo định dạng HH:MM DD/MM/YYYY"
+                },
+                "advisor_name": {
+                    "type": "string",
+                    "description": "Họ tên cố vấn học tập phụ trách cuộc hẹn"
+                }
             },
-            "required": [] # TODO 1.2: Khai báo danh sách các trường bắt buộc tại đây...
+            "required": ["student_id", "datetime_str", "advisor_name"]
+        }
+    },
+    {
+        "name": "web_search",
+        "description": "Tìm kiếm thông tin cập nhật trên web bằng Google Search qua SerpApi.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Cụm từ hoặc câu hỏi cần tìm kiếm trên web"
+                }
+            },
+            "required": ["query"]
         }
     }
 ]
@@ -102,10 +131,39 @@ def execute_schedule_appointment(student_id: str, datetime_str: str, advisor_nam
     }, ensure_ascii=False)
 
 
+def execute_web_search(query: str) -> str:
+    """Tìm kiếm web qua SerpApi và chỉ trả về dữ liệu cần cho Agent."""
+    api_key = os.getenv("SERPAPI_API_KEY")
+    if not api_key or api_key == "your_serpapi_api_key_here":
+        return json.dumps({"status": "CONFIG_ERROR", "message": "Chưa cấu hình SERPAPI_API_KEY."}, ensure_ascii=False)
+
+    params = urllib.parse.urlencode({
+        "engine": "google", "q": query, "api_key": api_key,
+        "hl": "vi", "gl": "vn", "num": 5, "output": "json"
+    })
+    request = urllib.request.Request(
+        f"https://serpapi.com/search?{params}",
+        headers={"User-Agent": "VinUni-ReAct-Lab/1.0"}
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=60) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+        if payload.get("error"):
+            return json.dumps({"status": "API_ERROR", "message": payload["error"]}, ensure_ascii=False)
+        results = [
+            {"title": item.get("title"), "link": item.get("link"), "snippet": item.get("snippet", "")}
+            for item in payload.get("organic_results", [])[:5]
+        ]
+        return json.dumps({"status": "SUCCESS", "query": query, "results": results}, ensure_ascii=False)
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+        return json.dumps({"status": "API_ERROR", "message": str(exc)}, ensure_ascii=False)
+
+
 # Router gọi tool thực tế
 TOOL_ROUTER = {
     "academic_query": execute_academic_query,
-    "schedule_appointment": execute_schedule_appointment
+    "schedule_appointment": execute_schedule_appointment,
+    "web_search": execute_web_search
 }
 
 def dispatch_tool_call(tool_name: str, arguments: Dict[str, Any]) -> str:
@@ -113,6 +171,8 @@ def dispatch_tool_call(tool_name: str, arguments: Dict[str, Any]) -> str:
     if tool_name in TOOL_ROUTER:
         try:
             return TOOL_ROUTER[tool_name](**arguments)
+        except TypeError as e:
+            return json.dumps({"status": "INVALID_ARGUMENTS", "error": str(e)}, ensure_ascii=False)
         except Exception as e:
             return json.dumps({"status": "EXECUTION_ERROR", "error": str(e)}, ensure_ascii=False)
     return json.dumps({"status": "UNKNOWN_TOOL", "error": f"Tool '{tool_name}' không tồn tại!"}, ensure_ascii=False)
